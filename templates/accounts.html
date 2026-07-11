@@ -1,0 +1,85 @@
+{% extends "layout.html" %}
+
+
+{% block title %} Accounts {% endblock %}
+
+{% block body %}
+<h1>Accounts</h1>
+
+<h2>Transfer</h2>
+<form action="/accounts/transfer" method="POST">
+
+    <label for="from_account">From</label>
+    <select name="from_account" id="from_account" required>
+        <option value="" disabled selected>Choose an account</option>
+        {% for row in rows %}
+        <option value="{{ row['id'] }}">{{ row['account_name'] }}</option>
+        {% endfor %}
+    </select>
+
+    <label for="amount">Amount</label>
+    <input type="number" name="amount" id="amount" step="0.01" required>
+
+    <label for="to_account">To</label>
+    <select name="to_account" id="to_account" required>
+        <option value="" disabled selected>Choose an account</option>
+        {% for row in rows %}
+        <option value="{{ row['id'] }}">{{ row['account_name'] }}</option>
+        {% endfor %}
+    </select>
+    <button type="submit">Transfer</button>
+</form>
+
+<h2>Data</h2>
+<p>Total: {{ total }}</p>
+<table>
+    <tr>
+        <th>Name</th>
+        <th>Percentage</th>
+        <th>Balance</th>
+        <th>Action</th>
+    </tr>
+    <tr>
+        <td>
+            <form action="/accounts/create" method="POST">
+                <input type="text" name="name" id="name" required>
+        </td>
+        <td>
+                <input type="number" name="percentage" id="percentage" step="0.01" required>
+        </td>
+        <td>
+                <input type="number" name="balance" id="balance" step="0.01" required>
+        </td>
+        <td>
+                <button type="submit">Create</button>
+            </form>
+        </td>
+    </tr>
+    {% for row in rows %}
+    <tr>
+        <td>
+            <form action="accounts/edit" method="POST">
+                <input type="hidden" name="id" id="id" value="{{ row['id'] }}" required>
+                <input type="text" name="name" id="name" value="{{ row['account_name'] }}" disabled required>
+        </td>
+        <td>
+                <input type="number" name="percentage" id="percentage" step="0.01" value="{{ row['account_percentage'] }}" disabled required>
+        </td>
+        <td>
+                <input type="number" name="balance" id="balance" step="0.01" value="{{ row['balance'] }}" disabled required>
+        </td>
+        <td>
+                <button type="submit" class="conform-btn" hidden>Conform</button>
+            </form>
+            <button class="cancel-btn" hidden>Cancel</button>
+            <button class="edit-btn">Edit</button>
+            <form action="accounts/delete" method="POST">
+                <input type="hidden" name="id" id="id" value="{{ row['id'] }}" required>
+                <input type="hidden" name="balance" id="balance" step="0.01" value="{{ row['balance'] }}" required>
+                <button type="submit">Delete</button>
+            </form>
+        </td> 
+    </tr>
+    {% endfor %}
+</table>
+{% endblock %}
