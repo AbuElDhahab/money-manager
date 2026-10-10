@@ -1,0 +1,31 @@
+{% macro modal(action, title) %}
+<dialog id="modal">
+  <form method="post" action="{{ action }}" id="modalForm" data-title="{{ title }}">
+    <h2 id="modalTitle">{{ title }}</h2>
+    <input type="hidden" name="id"><input type="hidden" name="_csrf" value="{{ csrf_token() }}"><input type="hidden" name="next" value="{{ request.full_path if request.query_string else request.path }}">
+    {{ caller() }}
+    <div class="row end">
+      <button type="button" class="btn ghost" data-close>Cancel</button>
+      <button class="btn">Save</button>
+    </div>
+  </form>
+</dialog>
+{% endmacro %}
+
+{% macro amount_field() %}
+<div class="amount">
+  <div class="amount-row">
+    <label>Amount <input type="number" name="amount" step="0.01" min="0.01" required inputmode="decimal"></label>
+    <button type="button" class="btn ghost calc-toggle" aria-expanded="false" title="Open calculator">Calculator</button>
+  </div>
+  <div class="calc" hidden>
+    <input class="calc-expr" type="text" autocomplete="off" spellcheck="false" aria-label="Calculation" placeholder="12.5*3 + 40">
+    <div class="calc-result" aria-live="polite"></div>
+    <div class="calc-keys"></div>
+    <div class="row end">
+      <button type="button" class="btn ghost sm" data-calc-close>Close</button>
+      <button type="button" class="btn sm" data-calc-use>Use result</button>
+    </div>
+  </div>
+</div>
+{% endmacro %}

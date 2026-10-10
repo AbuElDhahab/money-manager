@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% from "_modal.html" import modal, amount_field with context %}
+{% block title %}Expenses{% endblock %}
+{% block content %}
+<header class="head"><h1>Expenses</h1><div class="row"><a class="btn ghost" href="{{ url_for('expenses.export', **f.to_dict()) }}" title="Download the records shown here as CSV">Export CSV</a><button class="btn" data-new>Add expense</button></div></header>
+<form class="filters" method="get">
+  <label>From <input type="date" name="start" value="{{ f.start }}"></label>
+  <label>To <input type="date" name="end" value="{{ f.end }}"></label>
+  <label>Account
+    <select name="account_id"><option value="">All</option>
+      {% for a in accounts %}<option value="{{ a.id }}" {{ 'selected' if f.account_id|string==a.id|string }}>{{ a.account_name }}</option>{% endfor %}
+    </select></label>
+  <label>Category <input name="category" value="{{ f.category }}" placeholder="Search category" list="cats"></label>
+  <datalist id="cats">{% for c in categories %}<option value="{{ c }}">{% endfor %}</datalist>
+  <button class="btn">Apply</button><a class="btn ghost" href="{{ url_for('expenses.index') }}">Reset</a>
+</form>
+<p class="hint">{{ rows|length }} record{{ '' if rows|length == 1 else 's' }} · total <b class="neg">{{ total|money }}</b></p>
+<div class="table-wrap"><table>
+  <thead><tr><th>Date</th><th>Account</th><th>Category</th><th>Sub-category</th><th class="num">Amount</th><th></th></tr></thead>
+  <tbody>
+  {% for r in rows %}
+  <tr>
+    <td data-l="Date">{{ r.record_date }}</td><td data-l="Account">{{ r.account_name or "—" }}</td>
+    <td data-l="Category">{{ r.main_category }}</td><td data-l="Sub-category">{{ r.sub_category or '' }}</td>
+    <td data-l="Amount" class="num neg">{{ r.amount|money }}</td>
+    <td class="act">
+      <button class="btn ghost sm" data-edit='{{ r|tojson }}'>Edit</button>
+      <form method="post" action="{{ url_for('expenses.delete', rid=r.id) }}" data-confirm="Delete this expense?"><input type="hidden" name="_csrf" value="{{ csrf_token() }}"><input type="hidden" name="next" value="{{ request.full_path if request.query_string else request.path }}"><button class="btn danger sm">Delete</button></form>
+    </td>
+  </tr>
+  {% else %}<tr><td colspan="6" class="empty">No expenses recorded for these filters.</td></tr>{% endfor %}
+  </tbody>
+</table></div>
+{% call modal(url_for('expenses.save'), 'Expense') %}
+  <label>Date <input type="date" name="record_date" required></label>
+  <label>Account <select name="account_id" required>
+    {% for a in accounts %}<option value="{{ a.id }}">{{ a.account_name }}</option>{% endfor %}</select></label>
+  <label>Category <input name="main_category" required maxlength="60" placeholder="Housing" list="cats"></label>
+  <label>Sub-category <input name="sub_category" maxlength="60" placeholder="Rent"></label>
+  {{ amount_field() }}
+{% endcall %}
+{% endblock %}

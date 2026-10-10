@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block title %}{{ e.code }}{% endblock %}
+{% block content %}
+<header class="head"><h1>{{ 'Page not found' if e.code == 404 else ('File too large' if e.code == 413 else 'Something went wrong') }}</h1></header>
+<p class="hint">{{ 'That page does not exist.' if e.code == 404 else ('That file is bigger than the 64 MB import limit.' if e.code == 413 else 'The request could not be completed. Reload the page and try again.') }}</p>
+<a class="btn" href="{{ url_for('overview.index') }}">Back to overview</a>
+{% endblock %}

@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}Data{% endblock %}
+{% macro act(endpoint, label, cls='', confirm='') %}
+<form method="post" action="{{ url_for(endpoint) }}"{% if confirm %} data-confirm="{{ confirm }}"{% endif %}>
+  <input type="hidden" name="_csrf" value="{{ csrf_token() }}"><button class="btn {{ cls }}">{{ label }}</button>
+</form>
+{% endmacro %}
+{% block content %}
+<header class="head"><h1>Data</h1></header>
+<section class="stats">
+  <div class="stat"><span>Income records</span><b>{{ counts.income }}</b></div>
+  <div class="stat"><span>Expense records</span><b>{{ counts.expenses }}</b></div>
+  <div class="stat"><span>Accounts</span><b>{{ counts.accounts }}</b></div>
+</section>
+
+<div class="card" id="drive">
+  <h2>Google Drive backup &amp; sync</h2>
+  {% if d.state == 'not_configured' %}
+    <p class="hint">Set up Google Drive once to back up your data and use it on your computer and phone. Save the OAuth client file you create in Google Cloud as <code>credentials.json</code> in the project folder (steps are in the README), then reload this page.</p>
+  {% elif d.state in ('disconnected', 'reconnect') %}
+    <p class="hint">{% if d.state == 'reconnect' %}{{ d.last_error or 'The connection expired.' }}{% else %}Connect your Google account to keep a copy of your data on Google Drive. Only one file, <code>ledger-backup.db</code>, is stored, and the app cannot see anything else in your Drive.{% endif %}</p>
+    <a class="btn" href="{{ url_for('drive.connect') }}">{{ 'Reconnect' if d.state == 'reconnect' else 'Connect Google Drive' }}</a>
+    <p class="hint">Connect from the computer that runs the app, opened at <code>http://127.0.0.1:5000</code>. Your phone can then use the same app.</p>
+  {% else %}
+    <p><span class="badge {{ d.level }}">{{ d.label }}</span>
+      {% if d.last_sync_at %}<small> · last sync {{ d.last_sync_at }}</small>{% endif %}</p>
+    {% if remote %}<p class="hint">Backup on Drive: updated {{ remote.modified[:16]|replace('T', ' ') if remote.modified else 'recently' }} UTC by <b>{{ remote.device or 'unknown device' }}</b>. This device: <b>{{ d.device }}</b>.</p>
+    {% elif remote_error %}<p class="hint">Could not check Google Drive: {{ remote_error }}</p>{% endif %}
+    {% if d.last_error and d.state == 'error' %}<p class="neg">{{ d.last_error }}</p>{% endif %}
+
+    {% if d.state == 'conflict' %}
+    <div class="banner"><b>Both this device and Google Drive changed.</b> Nothing was overwritten. Pick the version to keep:
+      <div class="row">
+        {{ act('drive.pull', "Use Google Drive's version", '', "Replace the data on this device with the Google Drive backup? What you have here is saved to a backup file first.") }}
+        {{ act('drive.push', "Keep this device's version", 'danger', "Replace the Google Drive backup with the data on this device?") }}
+      </div></div>
+    {% elif d.state == 'choose' %}
+    <div class="banner"><b>Google Drive already has a backup.</b> Choose how to start:
+      <div class="row">
+        {{ act('drive.pull', 'Import from Google Drive', '', 'Replace the data on this device with the Google Drive backup? What you have here is saved to a backup file first.') }}
+        {{ act('drive.push', 'Replace Drive with this device', 'danger', 'Replace the Google Drive backup with the data on this device?') }}
+      </div></div>
+    {% else %}
+    <div class="actions">
+      {{ act('drive.sync', 'Sync now') }}
+      {{ act('drive.pull', 'Import from Google Drive', 'ghost', 'Replace the data on this device with the Google Drive backup? What you have here is saved to a backup file first.') }}
+      {{ act('drive.push', 'Back up now', 'ghost', 'Replace the Google Drive backup with the data on this device?') }}
+    </div>
+    {% endif %}
+    <div class="actions">
+      <form method="post" action="{{ url_for('drive.auto') }}"><input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <input type="hidden" name="enabled" value="{{ '0' if d.auto_sync else '1' }}">
+        <button class="btn ghost sm">Automatic sync: {{ 'on (turn off)' if d.auto_sync else 'off (turn on)' }}</button></form>
+      {{ act('drive.disconnect', 'Disconnect', 'danger sm', 'Disconnect from Google Drive? Your backup file on Drive is not deleted.') }}
+    </div>
+    <p class="hint">With automatic sync on, every change is backed up to Drive, and changes made on another device are picked up when you open a page.</p>
+  {% endif %}
+</div>
+
+<section class="grid2" style="margin-top:1rem">
+  <div class="card">
+    <h2>Export database</h2>
+    <p class="hint">Download everything (accounts, balances, income, expenses) as one .db file.</p>
+    <a class="btn" href="{{ url_for('data.export_db') }}">Download .db file</a>
+  </div>
+  <div class="card">
+    <h2>Import from this device</h2>
+    <p class="hint">Replace all current data with a .db file. Balances in the file are kept exactly as stored. Your current data is saved next to the database first.</p>
+    <form method="post" action="{{ url_for('data.import_db') }}" enctype="multipart/form-data"
+          class="stack" data-confirm="Importing replaces ALL current data with the file you chose. Continue?">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <label>Database file <input type="file" name="dbfile" accept=".db,.sqlite,.sqlite3,application/vnd.sqlite3" required></label>
+      <button class="btn danger">Import and replace</button>
+    </form>
+  </div>
+</section>
+<div class="card">
+  <h2>Export a page as CSV</h2>
+  <p class="hint">Use <b>Export CSV</b> on the Income, Expenses or Accounts page. The file contains the records matching the filters currently applied to that page.</p>
+</div>
+{% endblock %}

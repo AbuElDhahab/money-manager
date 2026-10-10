@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% from "_modal.html" import modal with context %}
+{% block title %}Accounts{% endblock %}
+{% block content %}
+<header class="head"><h1>Accounts</h1><div class="row"><a class="btn ghost" href="{{ url_for('accounts.export') }}" title="Download the records shown here as CSV">Export CSV</a><button class="btn" data-new>New account</button></div></header>
+<section class="stats">
+  <div class="stat"><span>Total balance</span><b>{{ total_balance|money }}</b></div>
+  <div class="stat"><span>Assigned</span><b>{{ '%g'|format(used) }}%</b></div>
+  <div class="stat"><span>Unassigned</span><b class="{{ 'neg' if used>100 }}">{{ '%g'|format(100-used) }}%</b></div>
+</section>
+<div class="meter"><i style="width:{{ [used,100]|min }}%"></i></div>
+<p class="hint">Each new income is split by these percentages when you add it. Changing a percentage never changes a balance, and you can set any balance by hand with Edit.</p>
+<section class="cards">
+  {% for r in rows %}
+  <article class="card acct">
+    <h2>{{ r.account_name }}</h2>
+    <small>{{ '%g'|format(r.account_percentage) }}% of income</small>
+    <b class="big {{ 'neg' if r.balance<0 }}">{{ r.balance|money }}</b>
+    <div class="row end">
+      <button class="btn ghost sm" data-edit='{{ r|tojson }}'>Edit</button>
+      <form method="post" action="{{ url_for('accounts.delete', rid=r.id) }}" data-confirm="Delete {{ r.account_name }}?"><input type="hidden" name="_csrf" value="{{ csrf_token() }}"><input type="hidden" name="next" value="{{ request.full_path if request.query_string else request.path }}"><button class="btn danger sm">Delete</button></form>
+    </div>
+  </article>
+  {% else %}<p class="empty">No accounts yet. Create one to start splitting income.</p>{% endfor %}
+</section>
+{% call modal(url_for('accounts.save'), 'Account') %}
+  <label>Name <input name="account_name" required maxlength="40" placeholder="Needs"></label>
+  <label>Balance <input name="balance" type="number" step="0.01" placeholder="0.00"></label>
+  <label>Share of income (%) <input name="account_percentage" type="number" step="0.01" min="0" max="100" required></label>
+{% endcall %}
+{% endblock %}

@@ -1,0 +1,11 @@
+const assert = require("assert");
+const { evaluate } = require("../static/js/calc.js");
+const ok = (t, v) => assert.ok(Math.abs(evaluate(t) - v) < 1e-9, `${t} -> ${evaluate(t)} (want ${v})`);
+const bad = t => assert.ok(Number.isNaN(evaluate(t)), `${t} should be invalid, got ${evaluate(t)}`);
+ok("1+2*3", 7); ok("(1+2)*3", 9); ok("10/4", 2.5); ok("2×3÷4", 1.5); ok("12−5", 7);
+ok(".5+.25", 0.75); ok("5.", 5); ok("--3", 3); ok("-(2+3)*2", -10); ok(" 12.5 * 3 + 40 ", 77.5);
+ok("100-10-5", 85); ok("100/10/5", 2); ok("2*(3+(4-1))", 12);
+assert.strictEqual(evaluate(""), null); assert.strictEqual(evaluate("   "), null);
+["1,5+2", "1,500", "2 .5", "1/0", "2+", "abc", "((2)", "2)", "2**3", "1e3", "2 3", "*5", "()", "1..2", "alert(1)", "2+a"].forEach(bad);
+assert.ok(Number.isFinite(evaluate("999999999999*999999999999")));
+console.log("calc ok");

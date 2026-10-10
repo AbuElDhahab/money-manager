@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Overview{% endblock %}
+{% block content %}
+<header class="head"><h1>Overview</h1></header>
+<form class="filters" method="get">
+  <label>From <input type="date" name="start" value="{{ f.start }}"></label>
+  <label>To <input type="date" name="end" value="{{ f.end }}"></label>
+  <label>Account
+    <select name="account_id"><option value="">All</option>
+      {% for a in accounts %}<option value="{{ a.id }}" {{ 'selected' if f.account_id|string==a.id|string }}>{{ a.account_name }}</option>{% endfor %}
+    </select></label>
+  <label>Category
+    <select name="category"><option value="">All</option>
+      {% for c in categories %}<option {{ 'selected' if f.category==c }}>{{ c }}</option>{% endfor %}
+    </select></label>
+  <button class="btn">Apply</button><a class="btn ghost" href="{{ url_for('overview.index') }}">Reset</a>
+</form>
+
+<section class="stats">
+  <div class="stat"><span>Income</span><b class="pos">{{ total_in|money }}</b></div>
+  <div class="stat"><span>Expenses</span><b class="neg">{{ total_out|money }}</b></div>
+  <div class="stat"><span>Net</span><b class="{{ 'pos' if net>=0 else 'neg' }}">{{ net|money }}</b></div>
+  <div class="stat"><span>Saved from income</span><b>{{ '%.0f'|format(rate) }}%</b></div>
+</section>
+
+<section class="grid2">
+  <div class="card"><h2>Income vs expenses by month</h2><div class="chart"><canvas id="monthly"></canvas></div></div>
+  <div class="card"><h2>Spending by category</h2>
+    {% if data.cats %}<div class="chart"><canvas id="cats"></canvas></div>
+    {% else %}<p class="empty">No expenses match these filters.</p>{% endif %}</div>
+</section>
+
+<section class="grid2">
+  <div class="card"><h2>Account balances</h2>
+    {% for a in accounts %}
+    <div class="line"><span>{{ a.account_name }} <small>{{ '%g'|format(a.account_percentage) }}%</small></span><b class="{{ 'neg' if a.balance<0 }}">{{ a.balance|money }}</b></div>
+    {% endfor %}
+  </div>
+  <div class="card"><h2>Latest expenses</h2>
+    {% for r in recent %}
+    <div class="line"><span>{{ r.main_category }}{% if r.sub_category %} <small>{{ r.sub_category }}</small>{% endif %}<br><small>{{ r.record_date }} · {{ r.account_name or '—' }}</small></span><b>{{ r.amount|money }}</b></div>
+    {% else %}<p class="empty">Nothing here yet. <a href="{{ url_for('expenses.index') }}">Add an expense</a>.</p>{% endfor %}
+  </div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>window.DATA = {{ data|tojson }};</script>
+<script src="{{ url_for('static', filename='js/overview.js') }}"></script>
+{% endblock %}

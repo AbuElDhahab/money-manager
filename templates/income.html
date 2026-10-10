@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% from "_modal.html" import modal, amount_field with context %}
+{% block title %}Income{% endblock %}
+{% block content %}
+<header class="head"><h1>Income</h1><div class="row"><a class="btn ghost" href="{{ url_for('income.export', **f.to_dict()) }}" title="Download the records shown here as CSV">Export CSV</a><button class="btn" data-new>Add income</button></div></header>
+<form class="filters" method="get">
+  <label>From <input type="date" name="start" value="{{ f.start }}"></label>
+  <label>To <input type="date" name="end" value="{{ f.end }}"></label>
+  <label>Source <input name="source" value="{{ f.source }}" placeholder="Search source"></label>
+  <button class="btn">Apply</button><a class="btn ghost" href="{{ url_for('income.index') }}">Reset</a>
+</form>
+<p class="hint">{{ rows|length }} record{{ '' if rows|length == 1 else 's' }} · total <b class="pos">{{ total|money }}</b></p>
+<div class="table-wrap"><table>
+  <thead><tr><th>Date</th><th>Source</th><th class="num">Amount</th><th></th></tr></thead>
+  <tbody>
+  {% for r in rows %}
+  <tr>
+    <td data-l="Date">{{ r.record_date }}</td><td data-l="Source">{{ r.source }}</td>
+    <td data-l="Amount" class="num pos">{{ r.amount|money }}</td>
+    <td class="act">
+      <button class="btn ghost sm" data-edit='{{ r|tojson }}'>Edit</button>
+      <form method="post" action="{{ url_for('income.delete', rid=r.id) }}" data-confirm="Delete this income record?"><input type="hidden" name="_csrf" value="{{ csrf_token() }}"><input type="hidden" name="next" value="{{ request.full_path if request.query_string else request.path }}"><button class="btn danger sm">Delete</button></form>
+    </td>
+  </tr>
+  {% else %}<tr><td colspan="4" class="empty">No income recorded for these filters.</td></tr>{% endfor %}
+  </tbody>
+</table></div>
+{% call modal(url_for('income.save'), 'Income') %}
+  <label>Date <input type="date" name="record_date" required></label>
+  <label>Source <input name="source" required maxlength="80" placeholder="Salary"></label>
+  {{ amount_field() }}
+{% endcall %}
+{% endblock %}
